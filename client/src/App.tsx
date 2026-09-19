@@ -3,36 +3,15 @@ import type { BayState, StationTotals } from './types';
 import { randomCar, randomStartSoc, calcLiveKw, TARIFF_INR_PER_KWH } from './utils';
 import BayCard from './components/BayCard';
 import StationHeader from './components/StationHeader';
+import SessionHistory from './components/SessionHistory';
 import './App.css';
 
 // ── Constants ──────────────────────────────────────────────
 const TICK_REAL_MS = 200; // real-world ms per simulation tick
 
 const INITIAL_BAYS: BayState[] = [
-  {
-    id: 1,
-    label: 'Bay 1',
-    maxKw: 11,
-    phase: 'idle',
-    car: null,
-    soc: 0,
-    kwhAdded: 0,
-    costInr: 0,
-    liveKw: 0,
-    sessionCount: 0,
-  },
-  {
-    id: 2,
-    label: 'Bay 2',
-    maxKw: 50,
-    phase: 'idle',
-    car: null,
-    soc: 0,
-    kwhAdded: 0,
-    costInr: 0,
-    liveKw: 0,
-    sessionCount: 0,
-  },
+  { id: 1, label: 'Bay 1', maxKw: 11,  phase: 'idle', car: null, soc: 0, kwhAdded: 0, costInr: 0, liveKw: 0, sessionCount: 0 },
+  { id: 2, label: 'Bay 2', maxKw: 50,  phase: 'idle', car: null, soc: 0, kwhAdded: 0, costInr: 0, liveKw: 0, sessionCount: 0 },
 ];
 
 // ── Main App ───────────────────────────────────────────────
@@ -40,20 +19,18 @@ export default function App() {
   const [bays, setBays] = useState<BayState[]>(INITIAL_BAYS);
   const [speed, setSpeed] = useState<number>(1);
   const [totals, setTotals] = useState<StationTotals>({
-    totalKwh: 0,
-    totalRevenue: 0,
-    carsCharging: 0,
-    sessionsFinished: 0,
+    totalKwh: 0, totalRevenue: 0, carsCharging: 0, sessionsFinished: 0,
   });
+  // historyKey bumps to trigger SessionHistory to re-fetch
+  const [historyKey, setHistoryKey] = useState(0);
 
-  // Use refs for accumulated totals so the tick closure stays fresh
-  const totalsRef = useRef(totals);
-  totalsRef.current = totals;
+  // Track when charging started per bay (real wall-clock time)
+  const chargeStartRef = useRef<Record<number, number>>({});
 
   // ── Simulation tick ─────────────────────────────────────
   useEffect(() => {
     const interval = setInterval(() => {
-      const simHours = (TICK_REAL_MS / 1000) * speed / 3600; // hours per tick
+      const simHours = (TICK_REAL_MS / 1000) * speed / 3600;
 
       setBays(prev => {
         let deltaTotalKwh = 0;
@@ -64,9 +41,9 @@ export default function App() {
 
           const liveKw = calcLiveKw(bay.maxKw, bay.car.maxChargeKw, bay.soc);
           const deltaKwh = liveKw * simHours;
-          const deltaSoc = (deltaKwh / bay.car.batterySizeKwh) * 100;
-          const newSoc = Math.min(100, bay.soc + deltaSoc);
-          const newKwh = bay.kwhAdded + deltaKwh;
+          const deltaSoc  = (deltaKwh / bay.car.batterySizeKwh) * 100;
+          const newSoc  = Math.min(100, bay.soc + deltaSoc);
+          const newKwh  = bay.kwhAdded + deltaKwh;
           const newCost = newKwh * TARIFF_INR_PER_KWH;
 
           deltaTotalKwh += deltaKwh;
@@ -83,7 +60,6 @@ export default function App() {
           } as BayState;
         });
 
-        // Update totals via functional updater inside setBays callback
         if (deltaTotalKwh > 0) {
           setTotals(t => ({
             ...t,
@@ -99,16 +75,36 @@ export default function App() {
     return () => clearInterval(interval);
   }, [speed]);
 
-  // Keep carsCharging / sessionsFinished in sync with bays
+  // Keep live counters in sync
   useEffect(() => {
     const charging = bays.filter(b => b.phase === 'charging').length;
     const finished = bays.reduce((sum, b) => sum + b.sessionCount, 0);
-    setTotals(t => ({
-      ...t,
-      carsCharging: charging,
-      sessionsFinished: finished,
-    }));
+    setTotals(t => ({ ...t, carsCharging: charging, sessionsFinished: finished }));
   }, [bays]);
+
+  // ── Save session to backend ──────────────────────────────
+  const saveSession = useCallback(async (bay: BayState) => {
+    if (!bay.car || bay.kwhAdded < 0.001) return;
+    const startMs = chargeStartRef.current[bay.id];
+    const durationMin = startMs ? (Date.now() - startMs) / 60000 : null;
+    try {
+      await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bay: bay.label,
+          car: bay.car.name,
+          kwhAdded: bay.kwhAdded,
+          costInr: bay.costInr,
+          durationMin,
+          finishedAt: new Date().toISOString(),
+        }),
+      });
+      setHistoryKey(k => k + 1); // refresh list
+    } catch (err) {
+      console.warn('Could not save session:', err);
+    }
+  }, []);
 
   // ── Bay Actions ─────────────────────────────────────────
   const handlePlugIn = useCallback((bayId: number) => {
@@ -124,6 +120,7 @@ export default function App() {
   }, []);
 
   const handleStart = useCallback((bayId: number) => {
+    chargeStartRef.current[bayId] = Date.now();
     setBays(prev =>
       prev.map(b => {
         if (b.id !== bayId || b.phase !== 'plugged' || !b.car) return b;
@@ -144,10 +141,14 @@ export default function App() {
   }, []);
 
   const handleUnplug = useCallback((bayId: number) => {
-    setBays(prev =>
-      prev.map(b => {
+    setBays(prev => {
+      const bay = prev.find(b => b.id === bayId);
+      if (bay) saveSession(bay);
+
+      return prev.map(b => {
         if (b.id !== bayId) return b;
         const wasSession = b.phase === 'done' || (b.phase === 'plugged' && b.kwhAdded > 0);
+        delete chargeStartRef.current[bayId];
         return {
           ...b,
           phase: 'idle',
@@ -158,18 +159,14 @@ export default function App() {
           liveKw: 0,
           sessionCount: b.sessionCount + (wasSession ? 1 : 0),
         };
-      })
-    );
-  }, []);
+      });
+    });
+  }, [saveSession]);
 
   // ── Render ───────────────────────────────────────────────
   return (
     <div className="app">
-      <StationHeader
-        totals={totals}
-        speed={speed}
-        onSpeedChange={setSpeed}
-      />
+      <StationHeader totals={totals} speed={speed} onSpeedChange={setSpeed} />
 
       <main className="bays-grid">
         {bays.map(bay => (
@@ -183,6 +180,8 @@ export default function App() {
           />
         ))}
       </main>
+
+      <SessionHistory key={historyKey} />
 
       <footer className="app-footer">
         <span>⚡ Charge Station Simulator</span>
