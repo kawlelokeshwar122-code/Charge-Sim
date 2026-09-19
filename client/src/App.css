@@ -1,0 +1,70 @@
+/* ── CSS Variables ─────────────────────────────────── */
+:root {
+  --bg: #0f1117;
+  --card-bg: #1a1d27;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --text-primary: #f0f2f8;
+  --text-muted: #8892a4;
+}
+
+/* ── Reset ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── Layout ────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.bays-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 24px;
+  flex: 1;
+}
+
+/* ── Footer ────────────────────────────────────────── */
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--card-border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Mobile ────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .bays-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .app-footer {
+    flex-direction: column;
+    text-align: center;
+    padding: 10px 16px;
+  }
+}

@@ -1,0 +1,123 @@
+/* ── StationHeader ────────────────────────── */
+.station-header {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--card-border);
+  padding: 20px 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.station-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.station-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.station-logo {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.station-title h1 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.station-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 3px 0 0;
+}
+
+/* Speed */
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.speed-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.speed-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.speed-btn {
+  padding: 6px 14px;
+  border: 1.5px solid var(--card-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.speed-btn:hover {
+  border-color: #3498db;
+  color: #3498db;
+}
+
+.speed-btn.active {
+  background: #3498db;
+  border-color: #3498db;
+  color: #fff;
+}
+
+/* Totals */
+.totals-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.total-cell {
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 10px 14px;
+  text-align: center;
+}
+
+.total-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.total-lbl {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .station-header { padding: 14px 16px 12px; }
+  .station-title h1 { font-size: 1.05rem; }
+  .totals-bar { grid-template-columns: 1fr 1fr; }
+}
