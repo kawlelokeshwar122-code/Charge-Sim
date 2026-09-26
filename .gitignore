@@ -1,3 +1,14 @@
-node_modules
-dist
-.env
+# Environment files - never commit
+server/.env
+*.env
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build
+client/dist/
+
+# Logs
+*.log

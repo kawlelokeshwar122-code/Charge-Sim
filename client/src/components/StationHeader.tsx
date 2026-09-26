@@ -1,4 +1,3 @@
-import React from 'react';
 import type { StationTotals } from '../types';
 import { fmtKwh, fmtInr } from '../utils';
 import './StationHeader.css';

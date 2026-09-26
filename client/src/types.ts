@@ -1,25 +1,29 @@
-// Types for the charge station simulator
-
 export type BayPhase = 'idle' | 'plugged' | 'charging' | 'done';
 
 export interface Car {
   name: string;
-  batterySizeKwh: number;   // total battery capacity
-  maxChargeKw: number;      // car's max accepted charge rate
+  brand: string;
+  batterySizeKwh: number;
+  maxChargeKw: number;
   color: string;
 }
 
 export interface BayState {
   id: number;
   label: string;
-  maxKw: number;           // charger hardware limit
+  maxKw: number;
   phase: BayPhase;
   car: Car | null;
-  soc: number;             // 0–100 %
+  soc: number;
   kwhAdded: number;
   costInr: number;
   liveKw: number;
   sessionCount: number;
+  sessionId: number | null;
+  paid: boolean;
+  amountPaid?: number | null;
+  budgetLimit: number | null;
+  prepaid: boolean;
 }
 
 export interface StationTotals {

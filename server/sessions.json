@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1790434896083,
+    "bay": "Bay 1",
+    "car": "Mahindra XEV 9e",
+    "kwhAdded": 64.795,
+    "costInr": 1166.31,
+    "durationMin": 0.7501,
+    "finishedAt": "2026-09-26T15:01:35.742Z",
+    "paid": false,
+    "paymentId": null
+  },
+  {
+    "id": 1790435974558,
+    "bay": "Bay 1",
+    "car": "Hyundai Ioniq 5",
+    "kwhAdded": 42.139,
+    "costInr": 758.51,
+    "durationMin": 0.58395,
+    "finishedAt": "2026-09-26T15:19:34.526Z",
+    "paid": false,
+    "paymentId": null
+  }
+]
